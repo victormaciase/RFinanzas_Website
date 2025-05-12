@@ -1,0 +1,36 @@
+<svg viewBox="0 0 800 330" preserveAspectRatio="xMidYMid meet" style="width: 100%; height: auto;" id="rds">
+                            <!-- Arrow to Visualizar -->
+                            <rect width="640" height="250" x="10" y="30" rx="10" ry="10" fill="none" stroke="rgb(0,0,0)" stroke-width="2"/> 
+                            <rect width="260" height="200" x="250" y="50" rx="10" ry="10" fill="rgb(220,230,225)" />
+            
+                            <line x1="100" y1="150" x2="150" y2="150" stroke="black" stroke-width="2" marker-end="url(#arrow)"/>
+                            <line x1="230" y1="150" x2="280" y2="150" stroke="black" stroke-width="2" marker-end="url(#arrow)"/>
+                            <line x1="510" y1="150" x2="550" y2="150" stroke="black" stroke-width="2" marker-end="url(#arrow)"/>
+            
+                            <text x="23" y="155" fill="red">
+                                Importar
+                                <title>
+                                    Importar datos desde diversas fuentes: archivos (Excel, Stata, json, etc.), APIs, etc.
+                                    
+                                </title>
+                            </text>
+                            
+                            <text x="160" y="155" fill="red">Ordenar</text>
+                            <text x="290" y="155" fill="red">Transformar</text>
+                            <text x="400" y="90" fill="red">Visualizar</text>
+                            <text x="400" y="215" fill="red">Modelar</text>
+                            <text x="560" y="155" fill="red">Comunicar</text>
+                            <text x="260" y="265" fill="rgb(0, 0, 100)">Comprender</text>
+                            <text x="20" y="300" fill="rgb(0, 0, 100)">Programar</text>
+            
+                            <!-- Arrow to Modelar -->
+                            <path d="M450,100 Q510,150 450,200" fill="transparent" stroke="black" stroke-width="2" marker-end="url(#arrow)"/>
+                            <path d="M410,222 Q300,255 326,160" fill="transparent" stroke="black" stroke-width="2" marker-end="url(#arrow)"/>
+                            <path d="M330,138 Q350,100 395,86" fill="transparent" stroke="black" stroke-width="2" marker-end="url(#arrow)"/>
+            
+                            <defs>
+                                <marker id="arrow" markerWidth="10" markerHeight="10" refX="6" refY="3" orient="auto">
+                                    <path d="M0,0 L0,6 L6,3 Z" fill="black"/>
+                                </marker>
+                            </defs>
+                        </svg>
