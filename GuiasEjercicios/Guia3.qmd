@@ -1,0 +1,224 @@
+---
+format: pdf
+execute:
+  eval: false
+  message: false
+  warning: false
+---
+
+\begin{center}
+      \includegraphics[width=2cm, height=3cm]{logo_uchile.png}\\
+            \LARGE{\textbf{R para Finanzas}}\\
+            \textbf{Guía de Ejercicios 3}\\
+\end{center}
+
+\vspace{0.3cm}
+
+\begin{flushright}
+  \textbf{Profesor}: \textit{Víctor Macías E.}  \\
+\end{flushright}
+
+\vspace{0.5cm}
+
+```{r}
+library(readr)       # Pregunta 1 (si se usa Forma 2) y pregunta 5
+library(readxl)      # Pregunta 2
+library(tidyquant)   # Preguntas 3 y 4
+library(lubridate)   # Preguntas 3 y 4
+library(WDI)         # Pregunta 5
+library(dplyr)       # Todas las preguntas
+```
+
+## Pregunta 1
+
+Importa datos de los informes financieros anuales de Amazon desde el siguiente sitio:
+
+<https://github.com/rfordatascience/tidytuesday/blob/main/data/2025/2025-03-25/readme.md>
+
+La fuente de estos datos es la siguiente página de Amazon:
+
+<https://ir.aboutamazon.com/annual-reports-proxies-and-shareholder-letters/>
+
+¿Qué variables tiene la base? ¿Qué representa cada variable? ¿Qué años incluye la data?
+
+```{r}
+# Forma 1 
+report_words_clean <- 
+  readr::read_csv("https://raw.githubusercontent.com/rfordatascience/
+                  tidytuesday/main/data/2025/2025-03-25/report_words_clean.csv")
+```
+
+```{r}
+# Forma 2 
+report_words_clean2 <- 
+  read_csv("https://raw.githubusercontent.com/rfordatascience/
+           tidytuesday/main/data/2025/2025-03-25/report_words_clean.csv")
+```
+
+```{r}
+# Número de observaciones por año
+report_words_clean |> group_by(year) |> count()
+```
+
+## Pregunta 2
+
+Importa datos de las centrales generadoras en Chile de la siguiente página del Coordinador Eléctrico Nacional:
+
+<https://infotecnica.coordinador.cl/instalaciones/centrales>
+
+Construye una tabla de frecuencias con el número de centrales por tipo (solares, eólicas, hidroeléctricas, termoeléctricas, etc.) ¿En qué comunas se ubican las centrales termoeléctricas a carbón?
+
+```{r}
+centrales <- read_xlsx("datos/reporte_centrales.xlsx", skip = 6)
+```
+
+```{r}
+# Centrales generadoras por tipo
+centrales |> count(`Tipo Central`, sort = TRUE)
+```
+
+```{r}
+# Renombrando variables
+centrales_1 <- centrales |>
+  rename(tipo_central = `Tipo Central`,
+         tipo_combustible = `11.1.35 Combustible (solo para termoeléctricas)`)
+```
+
+```{r}
+# Centrales a carbón
+centrales_1 |>
+  filter(tipo_central == "Termoeléctricas",
+         tipo_combustible %in% c("Carbón", "GN / GNL / Carbón / Diesel")) |>
+  select(Nombre, `Nombre Propietario`, Comuna, tipo_combustible)
+```
+
+## Pregunta 3
+
+Baja datos del precio de la acción de Shell (SHEL), BP (BP), Exxon Mobil Corporation (XOM) y Chevron Corporation (CVX) para el período 02/01/2018 hasta el 25/03/2025 desde Yahoo! Finance.
+
+```{r}
+stock_prices <- tq_get(c("SHEL", "BP", "XOM", "CVX"), 
+                       get = "stock.prices", 
+                       from = "2018-01-02", to = "2025-03-26")
+```
+
+Después de obtener los datos, responde las siguientes preguntas:
+
+\(a\) ¿Cuántas observaciones hay en la base de datos? ¿Qué variables se encuentran disponibles? ¿Cuál es el tipo de cada variable?
+
+```{r}
+stock_prices |> glimpse()
+```
+
+\(b\) ¿Cuántas observaciones hay para cada acción?
+
+```{r}
+stock_prices |> group_by(symbol) |> count()
+```
+
+\(c\) Calcula el retorno diario de la acción, usando las siguientes fórmulas:
+
+$$(1) \quad r_t=\frac{p_t-p_{t-1}}{p_{t-1}}\times 100 $$ {#eq-1}
+
+$$(2)\quad r_t=100\times(log(p_t)-log(p_{t-1})) $$ {#eq-2}
+
+donde $p_t$ es el precio de cierre de la acción. ¿Qué diferencias se observan en los retornos calculados usando las fórmulas (1) y (2)?
+
+```{r}
+stock_prices <- stock_prices |> group_by(symbol) |>
+              mutate(retorno_aritmetico = 100*(close - lag(close))/lag(close),
+                     retorno_logaritmico = 100*(log(close)-log(lag(close)))) |>
+              ungroup()
+```
+
+\(d\) ¿Qué día de la semana se alcanzó el mayor retorno diario? ¿Qué día de la semana se alcanzó el menor retorno diario? ¿Cuál fue el precio de cierre los días anteriores a este aumento?
+
+```{r}
+# Días con mayor variación positiva
+stock_prices |> group_by(symbol) |> 
+  slice_max(retorno_aritmetico, n = 1) |> 
+  select(symbol, date, close, retorno_aritmetico) |>
+  ungroup() |>
+  mutate(dia_semana = wday(date, label = TRUE, abbr = FALSE))
+```
+
+```{r}
+# Precios días anteriores a la variación positiva más alta
+stock_prices |> filter(date >= ymd("2020-03-17") & date <= ymd("2020-03-24")) |>
+  select(symbol, date, close, retorno_aritmetico) 
+```
+
+```{r}
+# Días con mayores pérdidas
+stock_prices |> group_by(symbol) |> 
+  slice_min(retorno_aritmetico, n = 1) |> 
+  select(symbol, date, close, retorno_aritmetico) |>
+  ungroup() |>
+  mutate(dia_semana = wday(date, label = TRUE, abbr = FALSE))
+```
+
+## Pregunta 4
+
+Obtenga datos del precio del bitcoin para el período 02/01/2018 hasta el 25/03/2025 desde la página web de la Federal Reserve Bank of St. Louis (FRED) (<https://fred.stlouisfed.org/series/CBBTCUSD>) ¿Cuál son los mayores 3 precios que alcanzó el bitcoin en el período analizado?¿Cuáles son los tres más bajos? ¿Qué día de la semana se alcanzaron los máximos y mínimos?
+
+```{r}
+bitcoin <- tq_get("CBBTCUSD", get = "economic.data",
+                  from = "2018-01-02", to = "2025-03-31")
+```
+
+```{r}
+# Precios máximos
+bitcoin |>  
+  slice_max(price, n = 10) |> 
+  mutate(dia_semana = wday(date, label = TRUE, abbr = FALSE))
+```
+
+```{r}
+# Precios mínimos
+bitcoin |>  
+  slice_min(price, n = 3) |> 
+  mutate(dia_semana = wday(date, label = TRUE, abbr = FALSE))
+```
+
+## Pregunta 5
+
+Usando el paquete WDI, obtenga datos de las siguientes variables de World Development Indi-\
+cators del Banco Mundial para el período 1970-2023:
+
+```{r}
+# GDP per capita, PPP (constant 2021 international $)
+# NY.GDP.PCAP.PP.KD
+
+# Population
+# SP.POP.TOTL
+
+# Carbon dioxide (CO2) emissions (total) excluding LULUCF (Mt CO2e)
+# EN.GHG.CO2.MT.CE.AR5
+
+# Total greenhouse gas emissions excluding LULUCF (Mt CO2e)
+# EN.GHG.ALL.MT.CE.AR5
+
+# Carbon dioxide (CO2) emissions excluding LULUCF per capita (tCO2e/capita)
+# EN.GHG.CO2.PC.CE.AR5
+
+# Total greenhouse gas emissions excluding LULUCF per capita (tCO2e/capita)
+# EN.GHG.ALL.PC.CE.AR5
+
+# Total greenhouse gas emissions including LULUCF (Mt CO2e)
+# EN.GHG.ALL.LU.MT.CE.AR5
+```
+
+```{r}
+wbData <- WDI(indicator=c("NY.GDP.PCAP.PP.CD",
+                          "SP.POP.TOTL",
+                          "EN.GHG.CO2.MT.CE.AR5",
+                          "EN.GHG.ALL.MT.CE.AR5",
+                          "EN.GHG.CO2.PC.CE.AR5",
+                          "EN.GHG.ALL.PC.CE.AR5",
+                          "EN.GHG.ALL.LU.MT.CE.AR5"),
+              country="all", extra = TRUE, start=1970, end=2023)
+```
+
+```{r}
+write_rds(wbData, "datos/wbData_1970_2023.rds")
+```
